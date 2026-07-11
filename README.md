@@ -23,24 +23,36 @@ vocabulary, same dismissal semantics, same URL pattern grammar, same
 restoration behavior — verified by the same test matrix, ported
 test-for-test. A deep link spec written once drives both apps.
 
-## What's here (v0 — the shared core)
+## What's here
 
-`navigatorkit-core` is a **pure JVM module** (no Android SDK needed) built on
-Compose's multiplatform `runtime` artifact, so the state tree is
+Two modules:
+
+**`navigatorkit-core`** — a **pure JVM module** (no Android SDK needed) built
+on Compose's multiplatform `runtime` artifact, so the state tree is
 snapshot-backed and Compose-observable while every test runs headlessly with
-`./gradlew test`:
+`./gradlew :navigatorkit-core:test`.
 
-| Piece | Status |
-|---|---|
-| `Route` + polymorphic serialization (`@SerialName` = stable type id) | ✅ |
-| State tree: `SceneNavigator`, `NavigationContext`, `TabsLayout`, `SplitLayout` | ✅ |
-| `navigationIntent { }` DSL + `RoutePlacement` semantics | ✅ |
-| `IntentResolver` (Planner semantics, single-pass) | ✅ |
-| Deep links: `deepLinkMap { }`, `UrlPattern`, typed params | ✅ |
-| System back: `scene.goBack()` / `canGoBack()` | ✅ |
-| Restoration: lossy versioned snapshots (`NavigationSnapshotCoder`) | ✅ |
-| Ported test matrix | ✅ 38 tests |
-| `navigatorkit-compose` UI module | ⏳ next (see roadmap) |
+**`navigatorkit-compose`** — the Android library that renders the tree as
+real Compose UI and wires system back. It builds to an AAR
+(`./gradlew :navigatorkit-compose:assembleDebug`).
+
+| Piece | Module | Status |
+|---|---|---|
+| `Route` + polymorphic serialization (`@SerialName` = stable type id) | core | ✅ |
+| State tree: `SceneNavigator`, `NavigationContext`, `TabsLayout`, `SplitLayout` | core | ✅ |
+| `navigationIntent { }` DSL + `RoutePlacement` semantics | core | ✅ |
+| `IntentResolver` (Planner semantics, single-pass) | core | ✅ |
+| Deep links: `deepLinkMap { }`, `UrlPattern`, typed params | core | ✅ |
+| System back: `scene.goBack()` / `canGoBack()` | core | ✅ |
+| Restoration: lossy versioned snapshots (`NavigationSnapshotCoder`) | core | ✅ |
+| Ported test matrix | core | ✅ 38 tests |
+| `Navigator` facade + `LocalNavigator` | compose | ✅ |
+| `DestinationRegistry` / `RoutableFeature` (route → `@Composable`) | compose | ✅ |
+| `RoutedScene` / `RoutedRoot` / `RoutedStack` (Navigation-3-style renderer) | compose | ✅ |
+| Tab bar, responsive list-detail split | compose | ✅ |
+| `ModalBottomSheet` / full-screen / `AlertDialog` binding (recursive) | compose | ✅ |
+| Predictive/system back via `BackHandler` | compose | ✅ |
+| Sample app + multi-window scene coordination | — | ⏳ next (see roadmap) |
 
 ## Where the platforms differ — by design
 
@@ -120,20 +132,72 @@ val report = NavigationSnapshotCoder.decodeAndRestore(scene, data, routesJson)
 Unknown route types truncate the path before them and drop presentations
 stacked above — restoration is lossy, never brittle. Snapshots are versioned.
 
+## Rendering the tree (compose module)
+
+```kotlin
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        val registry = destinationRegistry {
+            feature(ProductsFeature)
+            feature(ReviewsFeature)
+            feature(SettingsFeature)
+        }
+        val scene = ShopBlueprint.newScene()          // per-window state tree
+        val navigator = Navigator(scene, registry)
+
+        // Deep links (App Links / custom scheme / notification intents):
+        intent?.data?.let { uri ->
+            deepLinks.intentFor(uri.toString())?.let(navigator::perform)
+        }
+
+        setContent {
+            MaterialTheme { RoutedScene(navigator) }    // renders + wires back
+        }
+    }
+}
+```
+
+A feature registers destinations knowing nothing about the app shell:
+
+```kotlin
+object ProductsFeature : RoutableFeature {
+    override fun destinations(builder: DestinationRegistryBuilder) = with(builder) {
+        destination<ProductRoute.List> { ProductListScreen() }
+        destination<ProductRoute.Detail> { ProductDetailScreen(it.id) }
+    }
+}
+```
+
+And a screen sees only the navigator:
+
+```kotlin
+@Composable
+fun ProductDetailScreen(id: Int) {
+    val navigator = LocalNavigator.current
+    Button(onClick = { navigator.navigate(ReviewRoute.Compose(id)) }) { Text("Review") }
+}
+```
+
+The renderer is Navigation-3 in spirit: `RoutedStack` treats the context's
+`backStack` as the source of truth and animates push/pop with `AnimatedContent`.
+No Navigation 3 dependency is pulled — the tree already *is* the back stack,
+which is exactly what Nav3 asks you to own.
+
 ## Building
 
-Pure JVM; any JDK 17+ works (Android Studio's bundled JBR is fine):
-
 ```sh
-JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home" ./gradlew test
+export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
+./gradlew :navigatorkit-core:test          # headless, no emulator
+./gradlew :navigatorkit-compose:assembleDebug   # the UI library AAR
 ```
 
 ## Roadmap
 
-1. **`navigatorkit-compose`** (Android library): `RoutedNavDisplay` binding
-   the tree to Navigation 3's `NavDisplay`, `NavigationSuiteScaffold` tab
-   root, `NavigableListDetailPaneScaffold` split root, `ModalBottomSheet` /
-   dialog binding, predictive-back integration, per-feature `entryProvider`
-   registration via DI multibindings (the `DestinationRegistry` counterpart).
-2. Scene coordination for multi-window (tablets, DeX, desktop windowing).
-3. Sample app mirroring ShopExample, driven by the same deep link table.
+1. Sample app mirroring ShopExample, driven by the same deep link table
+   (with a screenshot/instrumentation smoke test).
+2. Scene coordination for multi-window (tablets, DeX, desktop windowing) —
+   the `AppNavigator` + scene-policy counterpart.
+3. `rememberSaveable` / `SavedStateHandle` glue so restoration is automatic
+   rather than manual `encode` / `decodeAndRestore` calls.

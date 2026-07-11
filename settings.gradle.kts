@@ -16,3 +16,4 @@ dependencyResolutionManagement {
 rootProject.name = "navigatorkit-android"
 
 include(":navigatorkit-core")
+include(":navigatorkit-compose")
