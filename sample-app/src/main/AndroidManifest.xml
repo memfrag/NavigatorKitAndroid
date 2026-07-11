@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application
+        android:allowBackup="true"
+        android:label="NavigatorKit Sample"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.NavigatorKitSample">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="NavigatorKit Sample"
+            android:theme="@style/Theme.NavigatorKitSample">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!-- Custom-scheme deep links: shopapp://products/42/review -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="shopapp" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

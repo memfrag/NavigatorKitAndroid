@@ -52,7 +52,8 @@ real Compose UI and wires system back. It builds to an AAR
 | Tab bar, responsive list-detail split | compose | ✅ |
 | `ModalBottomSheet` / full-screen / `AlertDialog` binding (recursive) | compose | ✅ |
 | Predictive/system back via `BackHandler` | compose | ✅ |
-| Sample app + multi-window scene coordination | — | ⏳ next (see roadmap) |
+| `sample-app`: tabs + split + nested sheets + deep links (installable APK) | sample | ✅ |
+| Multi-window scene coordination | — | ⏳ next (see roadmap) |
 
 ## Where the platforms differ — by design
 
@@ -185,19 +186,35 @@ The renderer is Navigation-3 in spirit: `RoutedStack` treats the context's
 No Navigation 3 dependency is pulled — the tree already *is* the back stack,
 which is exactly what Nav3 asks you to own.
 
-## Building
+## Sample app
+
+`sample-app` is a runnable single-activity app wiring the binding layer to
+real screens: a Shop stack, a Settings list-detail split, a Playground tab
+that fires the canonical hard intent (tab → stack → sheet → nested sheet →
+alert), a review bottom sheet with a nested photo-picker sheet and a discard
+confirmation dialog, and `shopapp://` deep links declared in the manifest.
+Four `RoutableFeature` objects register their destinations independently.
 
 ```sh
 export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
 ./gradlew :navigatorkit-core:test          # headless, no emulator
 ./gradlew :navigatorkit-compose:assembleDebug   # the UI library AAR
+./gradlew :sample-app:assembleDebug        # installable APK
+
+# On a device/emulator:
+adb install sample-app/build/outputs/apk/debug/sample-app-debug.apk
+adb shell am start -a android.intent.action.VIEW -d "shopapp://products/42/review"
 ```
+
+`sample-app/src/debug/.../Previews.kt` holds `@Preview` composables of the
+Shop list, product detail, Playground, and the wide settings split for
+Android Studio's preview pane.
 
 ## Roadmap
 
-1. Sample app mirroring ShopExample, driven by the same deep link table
-   (with a screenshot/instrumentation smoke test).
-2. Scene coordination for multi-window (tablets, DeX, desktop windowing) —
+1. Scene coordination for multi-window (tablets, DeX, desktop windowing) —
    the `AppNavigator` + scene-policy counterpart.
-3. `rememberSaveable` / `SavedStateHandle` glue so restoration is automatic
+2. `rememberSaveable` / `SavedStateHandle` glue so restoration is automatic
    rather than manual `encode` / `decodeAndRestore` calls.
+3. An instrumentation/screenshot smoke test once the Compose preview
+   screenshot plugin supports AGP's built-in Kotlin compilation.

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Compose supplies the real theming via MaterialTheme; this is just a
+         windowing shell with no action bar so the app draws edge to edge. -->
+    <style name="Theme.NavigatorKitSample" parent="@android:style/Theme.Material.Light.NoActionBar" />
+</resources>

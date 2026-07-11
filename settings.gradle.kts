@@ -17,3 +17,4 @@ rootProject.name = "navigatorkit-android"
 
 include(":navigatorkit-core")
 include(":navigatorkit-compose")
+include(":sample-app")
