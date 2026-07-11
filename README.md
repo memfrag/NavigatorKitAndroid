@@ -210,6 +210,19 @@ adb shell am start -a android.intent.action.VIEW -d "shopapp://products/42/revie
 Shop list, product detail, Playground, and the wide settings split for
 Android Studio's preview pane.
 
+### Running on a device (verified)
+
+Captured from the sample app on an Android 15 emulator:
+
+| | | | |
+|---|---|---|---|
+| ![Shop list](docs/screenshots/01-shop-list.png) | ![Deep link → review sheet](docs/screenshots/02-deeplink-review-sheet.png) | ![Nested sheet](docs/screenshots/03-nested-sheet.png) | ![Settings split](docs/screenshots/04-settings-split.png) |
+| Tabs + stack | `shopapp://products/42/review` → tab + stack + sheet, from one URL | A sheet presented from within the review sheet — recursive presentation | Settings list-detail split, detail pane |
+
+The deep link drives four container levels from a single URL; the nested sheet
+is `PresentationHost` recursing; system back (`goBack()`) unwinds the tree one
+level per press.
+
 ## Roadmap
 
 1. Scene coordination for multi-window (tablets, DeX, desktop windowing) —
