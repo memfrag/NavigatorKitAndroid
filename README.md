@@ -274,6 +274,15 @@ fun writeReviewPresentsSheet() {
 }
 ```
 
+The compose package ships `Navigator.testable(...)` for exactly this, so both
+snippets above lose their boilerplate:
+
+```kotlin
+val navigator = Navigator.testable(RootLayout.Tabs(tabsLayout), registry)
+// or the single-stack common case:
+val navigator = Navigator.testableStack(root = ProductRoute.Detail(42), registry = registry)
+```
+
 Most navigation tests skip the UI and drive `IntentResolver` against a scene
 directly (that's the ported 38-test suite); asserting a button is *wired* to the
 navigator needs a Compose UI test, but the logic lives below the UI so that's

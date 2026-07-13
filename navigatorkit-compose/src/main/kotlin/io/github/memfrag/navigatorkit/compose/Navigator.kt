@@ -10,7 +10,9 @@ import io.github.memfrag.navigatorkit.intent.NavigationIntent
 import io.github.memfrag.navigatorkit.intent.RoutePlacement
 import io.github.memfrag.navigatorkit.resolver.IntentResolver
 import io.github.memfrag.navigatorkit.resolver.NavigationException
+import io.github.memfrag.navigatorkit.state.NavigationContext
 import io.github.memfrag.navigatorkit.state.PresentationStyle
+import io.github.memfrag.navigatorkit.state.RootLayout
 import io.github.memfrag.navigatorkit.state.SceneNavigator
 
 /**
@@ -74,6 +76,32 @@ class Navigator(
 
     /** Whether [goBack] would consume a back event right now. */
     fun canGoBack(): Boolean = scene.canGoBack()
+
+    companion object {
+        /**
+         * A headless navigator for `@Preview`s and tests. A *real* navigator
+         * whose intents apply synchronously (the resolver is single-pass),
+         * over a fresh scene. Nothing is mocked — assert on [scene] after
+         * driving it.
+         *
+         * ```kotlin
+         * val navigator = Navigator.testable(
+         *     RootLayout.Stack(NavigationContext(root = ProductRoute.Detail(42)))
+         * )
+         * ```
+         */
+        fun testable(
+            root: RootLayout,
+            registry: DestinationRegistry = destinationRegistry {},
+        ): Navigator = Navigator(SceneNavigator(root), registry)
+
+        /** A headless navigator over a single back stack — the common case. */
+        fun testableStack(
+            root: Route? = null,
+            path: List<Route> = emptyList(),
+            registry: DestinationRegistry = destinationRegistry {},
+        ): Navigator = testable(RootLayout.Stack(NavigationContext(root, path)), registry)
+    }
 }
 
 /** Builds a one-operation intent with the core DSL (keeps call sites terse). */
