@@ -279,18 +279,11 @@
   <div class="wrap">
     <div class="hero-grid">
       <div>
-        <h1>The same navigation,<br>native to Compose.</h1>
-        <p class="lede">A programmatic router for Jetpack Compose: describe a destination
+        <h1>You own the back stack.<br>Drive the rest with one intent.</h1>
+        <p class="lede">A programmatic router for Jetpack Compose. Describe a destination
           <strong>across tabs, back stacks, list-detail panes, bottom sheets, and dialogs</strong>
-          as one declarative intent. Deep links, system back, and state restoration ride the same
-          tree — and because Compose materializes any state in a single pass, there's
-          <strong>no staged executor</strong> to fight.</p>
-
-        <div class="siblings">
-          Two platforms, one contract:
-          <a class="pill" href="https://memfrag.github.io/NavigatorKit/"><span class="dot" style="background:var(--l-stack)"></span>iOS / SwiftUI</a>
-          <span class="pill"><span class="dot" style="background:var(--accent)"></span>Android / Compose</span>
-        </div>
+          as one declarative intent, applied to a snapshot-backed state tree in a
+          <strong>single pass</strong>. Deep links, system back, and state restoration ride the same tree.</p>
 
         <div class="route-strip" role="img" aria-label="One intent travels through five containers: tab, stack, sheet, stack in sheet, alert">
           <div class="dot2" style="--dc: var(--l-tab)"><span>Tab</span></div>
@@ -348,26 +341,29 @@
 
 <section>
   <div class="wrap">
-    <div class="eyebrow e-stack">The Compose dividend</div>
-    <h2>One pass, not a staged executor</h2>
-    <p class="muted">On iOS the hard part is that SwiftUI can't materialize nested presentations from a
-      single state mutation — so the Swift package plans an intent into stages and awaits each UI
-      transition. Compose has no such constraint: hand it any tree and it recomposes. The Android
-      resolver applies an intent in one synchronous pass.</p>
+    <div class="eyebrow e-stack">The resolver</div>
+    <h2>Intents apply in a single pass</h2>
+    <p class="muted">Compose recomposes from whatever tree you hand it, so there are no stages to
+      sequence and nothing to await. <code>IntentResolver.resolve()</code> walks the intent against the
+      snapshot-backed tree and mutates it in one synchronous pass; Compose renders the result on the
+      next frame. No suspending calls, no transition coordination.</p>
 
-    <div class="versus">
-      <div class="ios">
-        <h4>iOS · SwiftUI</h4>
-        <p><b style="color:var(--ink)">Plan → apply → await → repeat.</b> A pure planner buckets the
-          intent into <code>dismiss → base → present×N → overlay</code> stages; the executor waits for
-          each real transition before the next. Nested sheets need one stage per level.</p>
+    <div class="grid c3" style="margin-top: 24px;">
+      <div class="card">
+        <h3>A moving cursor</h3>
+        <p>Operations apply to a cursor that starts at the active context. <code>selectTab</code>
+          retargets it, <code>present</code> descends into the child it created — so a tab switch, a
+          stack set, and a nested sheet compose as one ordered script.</p>
       </div>
-      <div class="android">
-        <h4>Android · Compose</h4>
-        <p><b style="color:var(--ink)">Apply, once.</b> <code>IntentResolver.resolve()</code> mutates the
-          snapshot-backed tree in a single pass and Compose renders it. No stages, no awaiting, no
-          suspending calls — but the <em>semantics</em> (cursor walk, dismissal rules, activate) are
-          preserved verbatim, so the same intent yields the same end state on both platforms.</p>
+      <div class="card">
+        <h3>Teardown, then build</h3>
+        <p>Mutating a stack under a sheet dismisses the sheet first; switching tabs clears the outgoing
+          tab's presentations. The dismissal rules are policy, applied deterministically — never a race.</p>
+      </div>
+      <div class="card">
+        <h3>Reveal what exists</h3>
+        <p><code>activate</code> searches the tree for a route and, if found, selects its tab, dismisses
+          what covers it, and pops to it — otherwise it falls back. Possible because paths are readable.</p>
       </div>
     </div>
   </div>
@@ -386,8 +382,8 @@
       <div class="card">
         <h3>Routes are values</h3>
         <p><code>@Serializable</code> sealed types implement <code>Route</code>. Kotlin's polymorphic
-          serialization does the type-erasure and decoding registry job that Swift needed
-          <code>AnyRoute</code> for — <code>@SerialName</code> is the stable id.</p>
+          serialization handles type erasure and the decoding registry natively —
+          <code>@SerialName</code> is the stable id used across restoration.</p>
       </div>
       <div class="card">
         <h3>Containers compose</h3>
@@ -405,11 +401,11 @@
 
 <section>
   <div class="wrap">
-    <div class="eyebrow e-overlay">The Android-shaped problem</div>
+    <div class="eyebrow e-overlay">Back is navigation too</div>
     <h2>System back, resolved by the tree</h2>
-    <p class="muted">The one navigation concern Android has that iOS doesn't. Rather than scatter
-      <code>BackHandler</code>s across screens, <code>goBack()</code> resolves one rule against the tree,
-      deepest-first. Press <span class="backkey">◁ Back</span> to watch it unwind.</p>
+    <p class="muted">Back and predictive-back are first-class navigation inputs on Android. Rather than
+      scatter <code>BackHandler</code>s across screens, <code>goBack()</code> resolves one rule against
+      the tree, deepest-first. Press <span class="backkey">◁ Back</span> to watch it unwind.</p>
 
     <div class="stepper">
       <div class="stack-vis" id="stack" aria-live="polite">
@@ -436,9 +432,9 @@
   <div class="wrap">
     <div class="eyebrow">Decoupling</div>
     <h2>Features register themselves</h2>
-    <p class="muted">A feature maps its routes to composables and knows nothing about the app shell or
-      its siblings — the counterpart of the Swift package's <code>RoutableFeature</code>. On Android the
-      idiomatic wiring is DI multibindings; the builder is the manual equivalent. Screens see one API:
+    <p class="muted">A feature implements <code>RoutableFeature</code> to map its routes to composables,
+      and knows nothing about the app shell or its sibling features. On Android the idiomatic wiring is
+      DI multibindings; the builder is the manual equivalent. Screens see one API:
       <code>LocalNavigator</code>.</p>
 
     <div class="grid c2" style="margin-top: 26px;">
@@ -470,7 +466,7 @@
 <section>
   <div class="wrap">
     <div class="eyebrow e-sheet">The contract</div>
-    <h2>Dismissal semantics, verbatim from iOS</h2>
+    <h2>Dismissal semantics you can rely on</h2>
     <p class="muted">Two things live under “dismissal”: explicitly closing what's open, and what
       gets torn down when you navigate elsewhere.</p>
 
@@ -516,7 +512,7 @@
     </div>
     <ul class="tight muted" style="margin-top: 20px; font-size: .92rem;">
       <li>Sibling tabs' <strong>back stacks</strong> are never touched by navigation.</li>
-      <li>Switching tabs dismisses whatever the outgoing tab presented — kept for parity with iOS, so a shared intent lands identically on both.</li>
+      <li>Switching tabs dismisses whatever the outgoing tab presented — deliberately, so a modal never lingers over the wrong tab.</li>
       <li>Mutating a stack that has something presented over it dismisses the presentation first.</li>
     </ul>
   </div>
@@ -524,12 +520,11 @@
 
 <section>
   <div class="wrap">
-    <div class="eyebrow">Same spec, both platforms</div>
-    <h2>Verified by a ported test matrix</h2>
-    <p class="muted">The whole core — tree, resolver, deep-link matching, back handling, restoration —
-      runs headlessly on the JVM. The 38 tests are ported one-for-one from the Swift package's suite,
-      so a deep link written once is provably identical on iOS and Android without a simulator or
-      emulator in sight.</p>
+    <div class="eyebrow">Provable without a device</div>
+    <h2>The whole core is headless-testable</h2>
+    <p class="muted">The tree, resolver, deep-link matching, back handling, and restoration all run on
+      the plain JVM — no emulator, no Robolectric. A deep link resolves to a state tree you can assert
+      on directly, so navigation logic is unit-tested with <code>./gradlew test</code>.</p>
 
     <div class="codecard" style="margin-top: 24px;">
       <div class="cc-head"><h3>A navigation test</h3><span class="file">./gradlew :navigatorkit-core:test — no emulator</span></div>
@@ -537,11 +532,37 @@
     </div>
 
     <div class="stats">
-      <div class="stat"><div class="n">38</div><div class="l">headless tests, ported from iOS</div></div>
+      <div class="stat"><div class="n">38</div><div class="l">headless tests, zero emulators</div></div>
       <div class="stat"><div class="n">1</div><div class="l">pass to apply an intent — no stages</div></div>
       <div class="stat"><div class="n">5</div><div class="l">container types, one intent DSL</div></div>
       <div class="stat"><div class="n">0</div><div class="l">emulators needed for the logic</div></div>
     </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="eyebrow">One contract, two platforms</div>
+    <h2>There's an iOS version too</h2>
+    <p class="muted">NavigatorKit ships for SwiftUI as well. Both packages implement the same navigation
+      contract — the same intent vocabulary, dismissal semantics, URL-pattern grammar, and restoration
+      behavior, verified by the same test matrix ported between them. What differs is only what each UI
+      toolkit demands.</p>
+    <div class="tablewrap" style="margin-top: 22px;">
+      <table>
+        <thead><tr><th></th><th>iOS · SwiftUI</th><th>Android · Compose</th></tr></thead>
+        <tbody>
+          <tr><td>Applying an intent</td><td>Staged executor: plan → apply → await each transition, because SwiftUI can't batch nested presentations</td><td>Single synchronous pass — Compose recomposes from any tree</td></tr>
+          <tr><td>Type erasure</td><td><code>AnyRoute</code> box + a <code>Codable</code> route registry</td><td>kotlinx polymorphic serialization (<code>@SerialName</code> as the stable id)</td></tr>
+          <tr><td>Interactive dismissal</td><td>Swipe-down a sheet</td><td>Swipe / scrim tap + system &amp; predictive back (<code>goBack()</code>)</td></tr>
+          <tr><td>Containers</td><td><code>NavigationStack</code> · <code>NavigationSplitView</code> · sheet · cover</td><td><code>NavDisplay</code>-style stack · list-detail pane · <code>ModalBottomSheet</code></td></tr>
+          <tr><td>Multi-window</td><td>Scenes + a scene-selection policy</td><td>On the roadmap</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top: 20px;">
+      <a class="pill" href="https://memfrag.github.io/NavigatorKit/"><span class="dot" style="background: var(--l-stack)"></span>See the iOS&nbsp;/&nbsp;SwiftUI version →</a>
+    </p>
   </div>
 </section>
 
