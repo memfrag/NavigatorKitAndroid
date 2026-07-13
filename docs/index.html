@@ -471,6 +471,20 @@
   <div class="wrap">
     <div class="eyebrow e-sheet">The contract</div>
     <h2>Dismissal semantics, verbatim from iOS</h2>
+    <p class="muted">Two things live under “dismissal”: explicitly closing what's open, and what
+      gets torn down when you navigate elsewhere.</p>
+
+    <h3 style="margin-top: 26px;">Closing what's open</h3>
+    <p class="muted">The navigator does it directly — no state to hoist into your composables:</p>
+    <pre class="code" aria-label="Dismissal API in Kotlin" style="margin-top: 4px;"><span class="ln">navigator.<span class="fn">dismiss</span>()      <span class="cm">// close the topmost sheet / full-screen / dialog</span></span><span class="ln">navigator.<span class="fn">dismissAll</span>()   <span class="cm">// tear down every presentation, back to the base context</span></span><span class="ln">navigator.<span class="fn">pop</span>()          <span class="cm">// step back one screen in the stack</span></span><span class="ln">navigator.<span class="fn">popToRoot</span>()    <span class="cm">// … all the way to the stack root</span></span></pre>
+    <p class="muted" style="margin-top: 14px; font-size: .92rem;">Sheets also dismiss <strong>interactively</strong> —
+      a swipe-down or scrim tap mutates the same snapshot state — and <strong>system back</strong>
+      (<code>goBack()</code>) unwinds the whole tree deepest-first, exactly as the stepper above shows.
+      Block interactive dismissal per presentation with <code>BottomSheet(dismissible = false)</code>.
+      Inside a <code>navigationIntent { }</code> the same verbs are <code>dismiss()</code>,
+      <code>dismissAll()</code>, <code>pop()</code>, and <code>popToRoot()</code>.</p>
+
+    <h3 style="margin-top: 30px;">What <span class="mono" style="font-weight: 700;">navigate()</span> dismisses</h3>
     <p class="muted"><code>navigate(route, placement)</code> resolves placement as: explicit argument →
       the route type's registered default → <code>Push</code>.</p>
     <div class="tablewrap" style="margin-top: 20px;">
