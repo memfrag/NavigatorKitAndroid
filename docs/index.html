@@ -484,6 +484,22 @@
       Inside a <code>navigationIntent { }</code> the same verbs are <code>dismiss()</code>,
       <code>dismissAll()</code>, <code>pop()</code>, and <code>popToRoot()</code>.</p>
 
+    <p class="muted" style="margin-top: 22px;">An intent is an ordered script over a moving cursor, so
+      teardown and navigation compose <strong>atomically</strong> — clear what's open, then go, in one
+      pass (ideal for a notification that should close modals and jump somewhere):</p>
+    <pre class="code" aria-label="Intent that dismisses then navigates" style="margin-top: 4px;"><span class="ln">navigator.<span class="fn">perform</span>(</span><span class="ln">  <span class="fn">navigationIntent</span> {</span><span class="ln">    <span class="fn">dismissAll</span>()                     <span class="cm">// tear down whatever's covering the screen</span></span><span class="ln">    <span class="fn">selectTab</span>(AppTab.Shop)             <span class="cm">// then navigate — one atomic move</span></span><span class="ln">    <span class="fn">setStack</span>(ProductRoute.List, ProductRoute.<span class="fn">Detail</span>(<span class="num">42</span>))</span><span class="ln">  }</span><span class="ln">)</span></pre>
+    <div class="card" style="margin-top: 18px; border-left: 4px solid var(--l-overlay);">
+      <h3><span style="color: var(--l-overlay);">⚠ Guardrail</span></h3>
+      <p><code>dismiss</code> / <code>dismissAll</code> / <code>activate</code> may <strong>not follow</strong>
+        <code>present</code> in the same intent — <code>IntentResolver</code> throws
+        <code>NavigationException.InvalidOperation</code> rather than guess. Those operations reason about
+        the <em>settled</em> tree (activate literally searches it), while <code>present</code> leaves the
+        cursor on a freshly-created child that isn't attached yet. Natural order is always
+        <strong>tear down → select/set → present → push/overlay</strong>, which is how a real transition
+        physically unfolds. <code>pop</code> is unrestricted — it's just a mutation on the cursor's back
+        stack, fine even inside a sheet you presented earlier in the same intent.</p>
+    </div>
+
     <h3 style="margin-top: 30px;">What <span class="mono" style="font-weight: 700;">navigate()</span> dismisses</h3>
     <p class="muted"><code>navigate(route, placement)</code> resolves placement as: explicit argument →
       the route type's registered default → <code>Push</code>.</p>
