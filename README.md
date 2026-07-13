@@ -1,5 +1,7 @@
 # NavigatorKit for Android
 
+**[📖 Overview page](https://memfrag.github.io/NavigatorKitAndroid/)**  ·  iOS counterpart: **[NavigatorKit](https://github.com/memfrag/NavigatorKit)** ([overview](https://memfrag.github.io/NavigatorKit/))
+
 The Android counterpart of [NavigatorKit](https://github.com/memfrag/NavigatorKit)
 (Swift/SwiftUI): programmatic, deeply-linkable navigation across tabs, stacks,
 list-detail splits, bottom sheets, full-screen modals, and dialogs — driven by
