@@ -225,6 +225,60 @@ The deep link drives four container levels from a single URL; the nested sheet
 is `PresentationHost` recursing; system back (`goBack()`) unwinds the tree one
 level per press.
 
+## Previewing and testing composables
+
+`Navigator` is a concrete class, not a protocol — so there's nothing to mock.
+Screens read it through the `LocalNavigator` composition local, and because the
+resolver applies intents in one synchronous pass, previews and tests use a real
+navigator with no coordinator or awaiting to arrange.
+
+**Previews.** Provide the navigator (and registry) through the composition
+locals, then render the screen. Render via `RoutedRoot`/the screen directly to
+avoid needing a back dispatcher; wrap in `RoutedScene` if you want system back
+wired too:
+
+```kotlin
+@Preview
+@Composable
+fun ProductDetailPreview() {
+    val registry = destinationRegistry {
+        feature(ProductsFeature); feature(ReviewsFeature)
+    }
+    val navigator = Navigator(
+        SceneNavigator(RootLayout.Stack(NavigationContext(root = ProductRoute.Detail(42)))),
+        registry,
+    )
+    CompositionLocalProvider(
+        LocalNavigator provides navigator,
+        LocalDestinationRegistry provides registry,
+    ) {
+        MaterialTheme { ProductDetailScreen(42) }
+    }
+}
+```
+
+**Testing a screen's actions.** Assert on the resulting state tree rather than
+recording calls — the scene is snapshot state, so you check what actually
+happened. No `await`: the resolver is synchronous.
+
+```kotlin
+@Test
+fun writeReviewPresentsSheet() {
+    val registry = destinationRegistry { feature(ReviewsFeature) }  // registers bottomSheet placement
+    val scene = SceneNavigator(RootLayout.Stack(NavigationContext(root = ProductRoute.Detail(42))))
+    val navigator = Navigator(scene, registry)
+
+    navigator.navigate(ReviewRoute.Compose(42))  // what the button calls
+
+    assertEquals(ReviewRoute.Compose(42), scene.baseContext.sheet?.content?.root)
+}
+```
+
+Most navigation tests skip the UI and drive `IntentResolver` against a scene
+directly (that's the ported 38-test suite); asserting a button is *wired* to the
+navigator needs a Compose UI test, but the logic lives below the UI so that's
+rarely necessary.
+
 ## Roadmap
 
 1. Scene coordination for multi-window (tablets, DeX, desktop windowing) —
