@@ -1,6 +1,11 @@
 plugins {
     kotlin("jvm")
     kotlin("plugin.serialization")
+    // Declares the module's identity, which is what lets a consumer depend on
+    // it straight from git via settings.gradle.kts `sourceControl` — Gradle
+    // only matches a coordinate to a repository if the build says it produces
+    // that coordinate. Nothing is published anywhere by applying this.
+    `maven-publish`
 }
 
 group = "io.github.memfrag.navigatorkit"

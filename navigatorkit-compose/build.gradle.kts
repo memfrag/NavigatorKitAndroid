@@ -3,6 +3,8 @@ plugins {
     kotlin("android")
     kotlin("plugin.serialization")
     id("org.jetbrains.kotlin.plugin.compose")
+    // See navigatorkit-core: this is what makes the module resolvable from git.
+    `maven-publish`
 }
 
 group = "io.github.memfrag.navigatorkit"
