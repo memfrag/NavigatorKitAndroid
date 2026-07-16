@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "io.github.memfrag.navigatorkit"
-version = "0.1.0"
+version = "1.0.0"
 
 android {
     namespace = "io.github.memfrag.navigatorkit.compose"
