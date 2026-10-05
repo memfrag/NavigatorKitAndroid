@@ -18,10 +18,13 @@ rule, URL syntax) must be mirrored in both repos and both test suites. The two o
 
 ## Commands
 
-Needs a JDK 17+. Android Studio's bundled JBR is the known-good one here:
+Needs a JDK 17–24: Gradle 8.14 can't run on JDK 25, which is what current Android Studio bundles as
+its JBR — so point `JAVA_HOME` at a JDK 17 or 21 instead. The SDK must be findable (`ANDROID_HOME` or
+`local.properties`):
 
 ```sh
-export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
+export JAVA_HOME=$(/usr/libexec/java_home -v 21)
+export ANDROID_HOME=~/Library/Android/sdk
 
 ./gradlew :navigatorkit-core:test              # core logic, pure JVM, no emulator (~38 tests)
 ./gradlew :navigatorkit-compose:testDebugUnitTest   # compose facade, pure JVM (no Robolectric)
@@ -84,9 +87,15 @@ single source of truth that Compose merely binds to.
 ### `navigatorkit-compose` (`.../compose/`)
 
 The SwiftUI-analogue binding. `RoutedStack` renders a `NavigationContext`'s `backStack` with
-`AnimatedContent` — Navigation-3-*style* (the list is the source of truth) but with **no Navigation 3
-dependency**. `Presentations.kt`'s `PresentationHost` installs `ModalBottomSheet` / full-screen /
-`AlertDialog` **recursively** at every level (that's how nested sheets work). `RoutedRoot` handles
+Navigation 3's `NavDisplay` — the role `NavigationStack` plays on iOS. The tree stays the source of
+truth; Nav3 only draws the stack and adds per-entry saved state / `ViewModelStore`s and predictive-back
+animations. `NavDisplay`'s `onBack` delegates to `goBack()`, so the tree's back rule still wins. Entry
+content keys are `"<per-stack UUID>/<index>/<route>"`: the ViewModel decorator shares one store map per
+activity across every `NavDisplay`, so keys must be unique across simultaneously-shown stacks. Nav3 is
+pinned to **1.1.x** — 1.2+ needs `compileSdk 37` / AGP 9.1.
+
+`Presentations.kt`'s `PresentationHost` installs `ModalBottomSheet` / full-screen / `AlertDialog`
+**recursively** at every level (that's how nested sheets work). `RoutedRoot` handles
 tabs (`NavigationBar`) and the responsive list-detail split. `RoutedScene` provides the composition
 locals and wires `BackHandler` to `goBack()`. `Navigator` is the facade views consume via
 `LocalNavigator` — a concrete class, not a protocol; nothing to mock (see `Navigator.testable(...)`

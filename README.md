@@ -50,7 +50,7 @@ real Compose UI and wires system back. It builds to an AAR
 | Ported test matrix | core | ✅ 38 tests |
 | `Navigator` facade + `LocalNavigator` | compose | ✅ |
 | `DestinationRegistry` / `RoutableFeature` (route → `@Composable`) | compose | ✅ |
-| `RoutedScene` / `RoutedRoot` / `RoutedStack` (Navigation-3-style renderer) | compose | ✅ |
+| `RoutedScene` / `RoutedRoot` / `RoutedStack` (Navigation 3 renderer) | compose | ✅ |
 | Tab bar, responsive list-detail split | compose | ✅ |
 | `ModalBottomSheet` / full-screen / `AlertDialog` binding (recursive) | compose | ✅ |
 | Predictive/system back via `BackHandler` | compose | ✅ |
@@ -183,10 +183,13 @@ fun ProductDetailScreen(id: Int) {
 }
 ```
 
-The renderer is Navigation-3 in spirit: `RoutedStack` treats the context's
-`backStack` as the source of truth and animates push/pop with `AnimatedContent`.
-No Navigation 3 dependency is pulled — the tree already *is* the back stack,
-which is exactly what Nav3 asks you to own.
+The renderer is Navigation 3: `RoutedStack` hands each context's `backStack` to
+`NavDisplay`. The tree stays the source of truth — it already *is* the back
+stack, which is exactly what Nav3 asks you to own — and Nav3 contributes per-entry
+saved UI state and `ViewModelStore`s (kept while an entry is covered, cleared when
+it's popped) plus predictive-back pop animations. Nav3 renders stacks only; tabs,
+the split, sheets, and alerts remain NavigatorKit's, and system back is still the
+tree's deepest-first rule (`NavDisplay`'s back handler delegates to `goBack()`).
 
 ## Sample app
 
